@@ -1,13 +1,9 @@
-Dorkbox General Utilities
+Swing Active Render
 
 ###### [![Dorkbox](https://badge.dorkbox.com/dorkbox.svg "Dorkbox")](https://git.dorkbox.com/dorkbox/SwingActiveRender) [![Github](https://badge.dorkbox.com/github.svg "Github")](https://github.com/dorkbox/SwingActiveRender) [![Gitlab](https://badge.dorkbox.com/gitlab.svg "Gitlab")](https://gitlab.com/dorkbox/SwingActiveRender)
 
 
-The files here are copyright by many different authors, usually Apache 2.0, MIT, or BSD. 
-
-Please see the header of each file for the specific license that applies to it. Specific license details are in the LICENSE file.
-
-
+This brings active rendering to Swing, allowing you to set the refresh rate of updates (instead of only updating when swing permits it.
 
 Maven Info
 ---------
