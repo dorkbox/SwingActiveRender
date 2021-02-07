@@ -44,10 +44,17 @@ class SwingActiveRender {
 
     private static final Runnable renderLoop = new ActiveRenderLoop();
 
+    /**
+     * Gets the version number.
+     */
+    public static
+    String getVersion() {
+        return "1.1";
+    }
+
     private
     SwingActiveRender() {
     }
-
 
     /**
      * Enables the component to to added to an "Active Render" thread, at a target "Frames-per-second". This is to support smooth, swing-based
