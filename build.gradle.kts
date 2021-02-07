@@ -26,12 +26,10 @@ gradle.startParameter.showStacktrace = ShowStacktrace.ALWAYS   // always show th
 gradle.startParameter.warningMode = WarningMode.All
 
 plugins {
-    java
-
     id("com.dorkbox.GradleUtils") version "1.12"
     id("com.dorkbox.Licensing") version "2.5.2"
     id("com.dorkbox.VersionUpdate") version "2.1"
-    id("com.dorkbox.GradlePublish") version "1.8"
+    id("com.dorkbox.GradlePublish") version "1.10"
 }
 
 object Extras {
@@ -56,7 +54,7 @@ object Extras {
 GradleUtils.load("$projectDir/../../gradle.properties", Extras)
 GradleUtils.fixIntellijPaths()
 GradleUtils.defaultResolutionStrategy()
-GradleUtils.compileConfiguration(JavaVersion.VERSION_1_6)
+GradleUtils.compileConfiguration(JavaVersion.VERSION_1_8)
 
 
 licensing {
@@ -101,7 +99,7 @@ tasks.jar.get().apply {
 }
 
 dependencies {
-    implementation("com.dorkbox:Utilities:1.5.1")
+    implementation("com.dorkbox:PropertyLoader:1.0")
 }
 
 publishToSonatype {

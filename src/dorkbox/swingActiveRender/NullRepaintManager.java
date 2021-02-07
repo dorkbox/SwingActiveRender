@@ -30,14 +30,10 @@ class NullRepaintManager extends RepaintManager {
      */
     public static
     void install() {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public
-            void run() {
-                RepaintManager repaintManager = new NullRepaintManager();
-                repaintManager.setDoubleBufferingEnabled(false);
-                RepaintManager.setCurrentManager(repaintManager);
-            }
+        SwingUtilities.invokeLater(()->{
+            RepaintManager repaintManager = new NullRepaintManager();
+            repaintManager.setDoubleBufferingEnabled(false);
+            RepaintManager.setCurrentManager(repaintManager);
         });
     }
 

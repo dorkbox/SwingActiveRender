@@ -22,8 +22,7 @@ import java.util.List;
 
 import javax.swing.JComponent;
 
-import dorkbox.util.ActionHandlerLong;
-import dorkbox.util.Property;
+import dorkbox.propertyLoader.Property;
 
 /**
  * Loop that controls the active rendering process
@@ -31,7 +30,6 @@ import dorkbox.util.Property;
 public
 class ActiveRenderLoop implements Runnable {
 
-    @Property
     /**
      * How many frames per second we want the Swing ActiveRender thread to run at
      *
@@ -40,9 +38,9 @@ class ActiveRenderLoop implements Runnable {
      *       {@link JComponent#setIgnoreRepaint(boolean)} otherwise this component will "fight" on the EDT for updates. You can completely
      *       disable the EDT by calling {@link NullRepaintManager#install()}
      */
+    @Property
     public static int TARGET_FPS = 30;
 
-    @SuppressWarnings("WhileLoopReplaceableByForEach")
     @Override
     public
     void run() {
@@ -60,8 +58,6 @@ class ActiveRenderLoop implements Runnable {
             // not synchronized, because we don't care. The worst case, is one frame of animation behind.
             for (int i = 0; i < SwingActiveRender.activeRenderEvents.size(); i++) {
                 ActionHandlerLong actionHandlerLong = SwingActiveRender.activeRenderEvents.get(i);
-
-                //noinspection unchecked
                 actionHandlerLong.handle(updateDeltaNanos);
             }
 

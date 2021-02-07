@@ -23,8 +23,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.swing.SwingUtilities;
 
-import dorkbox.util.ActionHandlerLong;
-
 /**
  * Contains all of the appropriate logic to setup and render via "Active" rendering (instead of "Passive" rendering).
  *
@@ -38,8 +36,8 @@ public final
 class SwingActiveRender {
     private static Thread activeRenderThread = null;
 
-    static final List<Component> activeRenders = new ArrayList<Component>();
-    static final List<ActionHandlerLong> activeRenderEvents = new CopyOnWriteArrayList<ActionHandlerLong>();
+    static final List<Component> activeRenders = new ArrayList<>();
+    static final List<ActionHandlerLong> activeRenderEvents = new CopyOnWriteArrayList<>();
 
     // volatile, so that access triggers thread synchrony, since 1.6. See the Java Language Spec, Chapter 17
     static volatile boolean hasActiveRenders = false;
@@ -65,13 +63,7 @@ class SwingActiveRender {
     void addActiveRender(final Component component) {
         // this should be on the EDT
         if (!EventQueue.isDispatchThread()) {
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public
-                void run() {
-                    addActiveRender(component);
-                }
-            });
+            SwingUtilities.invokeLater(()->addActiveRender(component));
             return;
         }
 
@@ -96,13 +88,7 @@ class SwingActiveRender {
     void removeActiveRender(final Component component) {
         // this should be on the EDT
         if (!EventQueue.isDispatchThread()) {
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public
-                void run() {
-                    removeActiveRender(component);
-                }
-            });
+            SwingUtilities.invokeLater(()->removeActiveRender(component));
             return;
         }
 
