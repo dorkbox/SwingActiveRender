@@ -52,6 +52,11 @@ class SwingActiveRender {
         return "1.1";
     }
 
+    static {
+        // Add this project to the updates system, which verifies this class + UUID + version information
+        dorkbox.updates.Updates.INSTANCE.add(SwingActiveRender.class, "0dfec3d996f3420d82a864c6cd5a2646", getVersion());
+    }
+
     private
     SwingActiveRender() {
     }

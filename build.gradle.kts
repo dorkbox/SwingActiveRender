@@ -99,6 +99,7 @@ tasks.jar.get().apply {
 }
 
 dependencies {
+    implementation("com.dorkbox:Updates:1.0")
     implementation("com.dorkbox:PropertyLoader:1.0")
 }
 
