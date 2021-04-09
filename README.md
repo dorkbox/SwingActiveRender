@@ -13,19 +13,19 @@ Maven Info
     <dependency>
       <groupId>com.dorkbox</groupId>
       <artifactId>SwingActiveRender</artifactId>
-      <version>1.1</version>
+      <version>1.2</version>
     </dependency>
 </dependencies>
 ```
 
 Gradle Info
 ---------
-````
+```
 dependencies {
     ...
-    compile "com.dorkbox:SwingActiveRender:1.0"
+    implementation("com.dorkbox:SwingActiveRender:1.2")
 }
-````
+```
 
 
 License

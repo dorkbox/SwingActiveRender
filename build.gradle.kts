@@ -26,9 +26,9 @@ gradle.startParameter.showStacktrace = ShowStacktrace.ALWAYS   // always show th
 gradle.startParameter.warningMode = WarningMode.All
 
 plugins {
-    id("com.dorkbox.GradleUtils") version "1.12"
-    id("com.dorkbox.Licensing") version "2.5.2"
-    id("com.dorkbox.VersionUpdate") version "2.1"
+    id("com.dorkbox.GradleUtils") version "1.17"
+    id("com.dorkbox.Licensing") version "2.5.5"
+    id("com.dorkbox.VersionUpdate") version "2.3"
     id("com.dorkbox.GradlePublish") version "1.10"
 }
 
@@ -36,7 +36,7 @@ object Extras {
     // set for the project
     const val description = "Active Renderer for Swing"
     const val group = "com.dorkbox"
-    const val version = "1.1"
+    const val version = "1.2"
 
     // set as project.ext
     const val name = "SwingActiveRender"
