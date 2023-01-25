@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.swingActiveRender;
+package dorkbox.swingActiveRender
 
-public
 interface ActionHandlerLong {
-    void handle(long value);
+    fun handle(value: Long)
 }
