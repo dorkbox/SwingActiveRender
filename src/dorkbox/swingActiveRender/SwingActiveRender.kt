@@ -54,7 +54,7 @@ object SwingActiveRender {
     }
 
     /**
-     * Enables the component to to added to an "Active Render" thread, at a target "Frames-per-second". This is to support smooth, swing-based
+     * Enables the component to be added to an "Active Render" thread, at a target "Frames-per-second". This is to support smooth, swing-based
      * animations.
      *
      *
