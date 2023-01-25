@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ sourceSets {
 
 repositories {
     mavenLocal() // this must be first!
-    jcenter()
+    mavenCentral()
 }
 
 tasks.jar.get().apply {
@@ -99,7 +99,7 @@ tasks.jar.get().apply {
 }
 
 dependencies {
-    implementation("com.dorkbox:Updates:1.0")
+    implementation("com.dorkbox:Updates:1.1")
     implementation("com.dorkbox:PropertyLoader:1.0")
 }
 
