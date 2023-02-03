@@ -1,4 +1,4 @@
-module com.dorkbox.swingActiveRender {
+module dorkbox.swingActiveRender {
     exports dorkbox.swingActiveRender;
 
     requires transitive dorkbox.updates;

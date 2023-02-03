@@ -17,8 +17,8 @@ package dorkbox.swingActiveRender
 
 import dorkbox.updates.Updates.add
 import java.awt.Component
-import java.awt.EventQueue
 import java.util.concurrent.*
+import java.util.concurrent.atomic.*
 import javax.swing.SwingUtilities
 
 /**
@@ -32,16 +32,17 @@ import javax.swing.SwingUtilities
  */
 @Suppress("MemberVisibilityCanBePrivate")
 object SwingActiveRender {
+    @Volatile
     private var activeRenderThread: Thread? = null
 
-    val activeRenders: MutableList<Component> = ArrayList()
-    val activeRenderEvents: MutableList<ActionHandlerLong> = CopyOnWriteArrayList()
+    internal val activeRenders: MutableList<Component> = CopyOnWriteArrayList()
+    internal val activeRenderEvents: MutableList<(deltaInNanos: Long)->Unit> = CopyOnWriteArrayList()
 
-    // volatile, so that access triggers thread synchrony, since 1.6. See the Java Language Spec, Chapter 17
+    // volatile, so that access triggers thread synchrony
     @Volatile
-    var hasActiveRenders = false
+    internal var hasActiveRenders = false
 
-    private val renderLoop: Runnable = ActiveRenderLoop()
+    private val renderLoop = ActiveRenderLoop()
 
     /**
      * Gets the version number.
@@ -63,22 +64,23 @@ object SwingActiveRender {
      *
      * @param component the component to add to the ActiveRender thread.
      */
-    fun addActiveRender(component: Component) {
-        // this should be on the EDT
-        if (!EventQueue.isDispatchThread()) {
-            SwingUtilities.invokeLater { addActiveRender(component) }
-            return
+    fun add(component: Component) {
+        SwingUtilities.invokeLater {
+            // this part has to be on the swing EDT
+            component.ignoreRepaint = true
         }
-        component.ignoreRepaint = true
 
-        synchronized(activeRenders) {
+
+        synchronized(renderLoop) {
             if (!hasActiveRenders) {
+                hasActiveRenders = true
                 setupActiveRenderThread()
             }
 
-            hasActiveRenders = true
             activeRenders.add(component)
         }
+
+        renderLoop.signalStart()
     }
 
     /**
@@ -86,23 +88,23 @@ object SwingActiveRender {
      *
      * @param component the component to remove
      */
-    fun removeActiveRender(component: Component) {
-        // this should be on the EDT
-        if (!EventQueue.isDispatchThread()) {
-            SwingUtilities.invokeLater { removeActiveRender(component) }
-            return
+    fun remove(component: Component) {
+        SwingUtilities.invokeLater {
+            // this part has to be on the swing EDT
+            component.ignoreRepaint = false
         }
 
-        synchronized(activeRenders) {
+
+        synchronized(renderLoop) {
             activeRenders.remove(component)
-            val hadActiveRenders = activeRenders.isNotEmpty()
-            hasActiveRenders = hadActiveRenders
-            if (!hadActiveRenders) {
+
+            val hasActiveRenders = activeRenders.isNotEmpty()
+            this.hasActiveRenders = hasActiveRenders
+            if (!hasActiveRenders) {
+                // our thread loop will kill itself
                 activeRenderThread = null
             }
         }
-
-        component.ignoreRepaint = false
     }
 
     /**
@@ -110,10 +112,8 @@ object SwingActiveRender {
      *
      * @param handler the handler to add
      */
-    fun addActiveRenderFrameStart(handler: ActionHandlerLong) {
-        synchronized(activeRenders) {
-            activeRenderEvents.add(handler)
-        }
+    fun add(handler: (deltaInNanos: Long)->Unit) {
+        activeRenderEvents.add(handler)
     }
 
     /**
@@ -123,10 +123,8 @@ object SwingActiveRender {
      *
      * @return true if this handler already exists in the active render, on-frame-start queue
      */
-    fun containsActiveRenderFrameStart(handler: ActionHandlerLong): Boolean {
-        synchronized(activeRenders) {
-            return activeRenderEvents.contains(handler)
-        }
+    fun contains(handler: (deltaInNanos: Long)->Unit): Boolean {
+        return activeRenderEvents.contains(handler)
     }
 
     /**
@@ -134,10 +132,21 @@ object SwingActiveRender {
      *
      * @param handler the handler to remove
      */
-    fun removeActiveRenderFrameStart(handler: ActionHandlerLong) {
-        synchronized(activeRenders) {
-            activeRenderEvents.remove(handler)
+    fun remove(handler: (deltaInNanos: Long)->Unit) {
+        activeRenderEvents.remove(handler)
+    }
+
+    fun isDispatchThread(): Boolean {
+        // make sure we are initialized!
+        if (activeRenderThread == null) {
+            synchronized(renderLoop) {
+                if (activeRenderThread == null) {
+                    setupActiveRenderThread()
+                }
+            }
         }
+
+        return Thread.currentThread() == renderLoop.currentThread
     }
 
     /**
@@ -148,10 +157,10 @@ object SwingActiveRender {
             return
         }
 
-        SynchronizedEventQueue.install()
-
-        activeRenderThread = Thread(renderLoop, "AWT-ActiveRender")
+        activeRenderThread = Thread(renderLoop, "Swing-ActiveRender")
         activeRenderThread!!.isDaemon = true
         activeRenderThread!!.start()
+
+        renderLoop.waitForStartup()
     }
 }
