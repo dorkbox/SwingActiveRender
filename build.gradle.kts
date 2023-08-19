@@ -80,7 +80,7 @@ tasks.jar.get().apply {
 
 dependencies {
     api("com.dorkbox:Updates:1.1")
-    api("com.dorkbox:PropertyLoader:1.2")
+    api("com.dorkbox:PropertyLoader:1.4")
 }
 
 publishToSonatype {

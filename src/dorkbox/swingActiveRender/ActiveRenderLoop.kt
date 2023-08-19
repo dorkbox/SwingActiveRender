@@ -45,7 +45,8 @@ class ActiveRenderLoop : Runnable {
          *
          * You can ALSO completely disable the Swing EDT by calling [NullRepaintManager.install]
          */
-        @Property
+        @Property(description = "How many frames per second the Swing ActiveRender thread will run at.")
+        @Volatile
         var TARGET_FPS = 30
     }
 
