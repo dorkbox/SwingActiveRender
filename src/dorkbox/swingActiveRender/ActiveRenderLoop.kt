@@ -15,9 +15,11 @@
  */
 package dorkbox.swingActiveRender
 
-import dorkbox.propertyLoader.Property
+import dorkbox.swingActiveRender.SwingActiveRender.TARGET_FPS
+import java.awt.Component
 import java.awt.Graphics
 import java.awt.Toolkit
+import java.util.concurrent.*
 import java.util.concurrent.locks.*
 import kotlin.concurrent.withLock
 
@@ -33,22 +35,12 @@ class ActiveRenderLoop : Runnable {
     private val condition = lock.newCondition()
     private val runTimeCondition = lock.newCondition()
 
-    companion object {
-        /**
-         * How many frames per second we want the Swing ActiveRender thread to run at
-         *
-         * ### NOTE:
-         *
-         * The ActiveRenderLoop replaces the Swing EDT (only for specified JFrames) in order to enable smoother animations. It is also
-         * important to REMEMBER -- if you add a component to an actively managed JFrame, YOU MUST make sure to call
-         * [javax.swing.JComponent.setIgnoreRepaint] otherwise this component will "fight" on the EDT for updates.
-         *
-         * You can ALSO completely disable the Swing EDT by calling [NullRepaintManager.install]
-         */
-        @Property(description = "How many frames per second the Swing ActiveRender thread will run at.")
-        @Volatile
-        var TARGET_FPS = 30
-    }
+
+    // volatile, so that access triggers thread synchrony
+    @Volatile
+    private var hasActiveRenders = false
+    private val activeRenders: MutableList<Component> = CopyOnWriteArrayList()
+
 
     override fun run() {
         currentThread = Thread.currentThread()
@@ -66,23 +58,23 @@ class ActiveRenderLoop : Runnable {
         val OPTIMAL_TIME = (1000000000 / TARGET_FPS).toLong()
         var graphics: Graphics? = null
 
+        // is a copy-on-write, and it must eventually be correct.
+        val renderEvents = SwingActiveRender.activeRenderEvents
+
         while (true) {
             // if we have NO active renderers, just wait for one.
 
-            while (SwingActiveRender.hasActiveRenders) {
+            while (hasActiveRenders) {
                 try {
                     val now = System.nanoTime()
                     val updateDeltaNanos = now - lastTime
                     lastTime = now
 
-                    // is a copy-on-write, and it must eventually be correct.
-                    val renderEvents = SwingActiveRender.activeRenderEvents
-                    renderEvents.forEach {
-                        it.invoke(updateDeltaNanos)
+                    for (event in renderEvents) {
+                        event.invoke(updateDeltaNanos)
                     }
 
-                    // this needs to be synchronized because we don't want to our canvas removed WHILE we are rendering it.
-                    val activeRenders = SwingActiveRender.activeRenders
+                    val activeRenders = this.activeRenders
                     for (component in activeRenders) {
                         if (!component.isDisplayable) {
                             continue
@@ -111,7 +103,7 @@ class ActiveRenderLoop : Runnable {
                         // see: http://www.cs.nuim.ie/~jpower/Research/Papers/2008/lambert-qapl08.pdf
                         // Also, down-casting (long -> int) is not expensive w.r.t IDIV/LDIV
                         val l = (lastTime - System.nanoTime() + OPTIMAL_TIME).toInt()
-                        val millis = l / 1000000
+                        val millis = l / 1_000_000
 
                         if (millis > 1) {
                             Thread.sleep(millis.toLong())
@@ -133,7 +125,18 @@ class ActiveRenderLoop : Runnable {
         }
     }
 
-    fun signalStart() {
+    fun maybeShutdown(component: Component): Boolean {
+        activeRenders.remove(component)
+
+        val hasActiveRenders = activeRenders.isNotEmpty()
+        this.hasActiveRenders = hasActiveRenders
+        return hasActiveRenders
+    }
+
+    fun signalStart(component: Component) {
+        hasActiveRenders = true
+        activeRenders.add(component)
+
         lock.withLock {
             runTimeCondition.signal()
         }

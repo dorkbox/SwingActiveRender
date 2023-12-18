@@ -15,10 +15,12 @@
  */
 package dorkbox.swingActiveRender
 
+import dorkbox.propertyLoader.Property
 import dorkbox.updates.Updates.add
+import java.awt.Canvas
 import java.awt.Component
+import java.awt.Window
 import java.util.concurrent.*
-import java.util.concurrent.atomic.*
 import javax.swing.SwingUtilities
 
 /**
@@ -32,26 +34,41 @@ import javax.swing.SwingUtilities
  */
 @Suppress("MemberVisibilityCanBePrivate")
 object SwingActiveRender {
+    /**
+     * How many frames per second we want the Swing ActiveRender thread to run at
+     *
+     * ### NOTE:
+     *
+     * The ActiveRenderLoop replaces the Swing EDT (only for specified JFrames) in order to enable smoother animations. It is also
+     * important to REMEMBER -- if you add a component to an actively managed JFrame, YOU MUST make sure to call
+     * [javax.swing.JComponent.setIgnoreRepaint] otherwise this component will "fight" on the EDT for updates.
+     *
+     * You can ALSO completely disable the Swing EDT by calling [NullRepaintManager.install]
+     */
+    @Property(description = "How many frames per second the Swing Active Render thread will run at.")
     @Volatile
-    private var activeRenderThread: Thread? = null
+    var TARGET_FPS = 30
 
-    internal val activeRenders: MutableList<Component> = CopyOnWriteArrayList()
+
+    private val activeRenderThread: Thread
+
     internal val activeRenderEvents: MutableList<(deltaInNanos: Long)->Unit> = CopyOnWriteArrayList()
-
-    // volatile, so that access triggers thread synchrony
-    @Volatile
-    internal var hasActiveRenders = false
 
     private val renderLoop = ActiveRenderLoop()
 
     /**
      * Gets the version number.
      */
-    const val version = "1.4"
+    const val version = "1.5"
 
     init {
         // Add this project to the updates system, which verifies this class + UUID + version information
         add(SwingActiveRender::class.java, "0dfec3d996f3420d82a864c6cd5a2646", version)
+
+        // this will pause and wait for a signal. Since this class is used, this means that we should create the threads
+        activeRenderThread = Thread(renderLoop, "Swing-ActiveRender")
+        activeRenderThread.isDaemon = true
+        activeRenderThread.start()
     }
 
     /**
@@ -65,22 +82,24 @@ object SwingActiveRender {
      * @param component the component to add to the ActiveRender thread.
      */
     fun add(component: Component) {
-        SwingUtilities.invokeLater {
+        if (SwingUtilities.isEventDispatchThread()) {
             // this part has to be on the swing EDT
             component.ignoreRepaint = true
-        }
-
-
-        synchronized(renderLoop) {
-            if (!hasActiveRenders) {
-                hasActiveRenders = true
-                setupActiveRenderThread()
+        } else {
+            SwingUtilities.invokeAndWait {
+                // this part has to be on the swing EDT
+                component.ignoreRepaint = true
             }
-
-            activeRenders.add(component)
         }
 
-        renderLoop.signalStart()
+        if (component is Window) {
+            component.createBufferStrategy(2)
+        } else if (component is Canvas) {
+            component.createBufferStrategy(2)
+        }
+
+        setupActiveRenderThread()
+        renderLoop.signalStart(component)
     }
 
     /**
@@ -89,22 +108,17 @@ object SwingActiveRender {
      * @param component the component to remove
      */
     fun remove(component: Component) {
-        SwingUtilities.invokeLater {
+        if (SwingUtilities.isEventDispatchThread()) {
             // this part has to be on the swing EDT
             component.ignoreRepaint = false
-        }
-
-
-        synchronized(renderLoop) {
-            activeRenders.remove(component)
-
-            val hasActiveRenders = activeRenders.isNotEmpty()
-            this.hasActiveRenders = hasActiveRenders
-            if (!hasActiveRenders) {
-                // our thread loop will kill itself
-                activeRenderThread = null
+        } else {
+            SwingUtilities.invokeAndWait {
+                // this part has to be on the swing EDT
+                component.ignoreRepaint = false
             }
         }
+
+        renderLoop.maybeShutdown(component)
     }
 
     /**
@@ -138,13 +152,7 @@ object SwingActiveRender {
 
     fun isDispatchThread(): Boolean {
         // make sure we are initialized!
-        if (activeRenderThread == null) {
-            synchronized(renderLoop) {
-                if (activeRenderThread == null) {
-                    setupActiveRenderThread()
-                }
-            }
-        }
+        setupActiveRenderThread()
 
         return Thread.currentThread() == renderLoop.currentThread
     }
@@ -153,14 +161,6 @@ object SwingActiveRender {
      * Creates (if necessary) the active-render thread. When there are no active-render targets, this thread will exit
      */
     private fun setupActiveRenderThread() {
-        if (activeRenderThread != null) {
-            return
-        }
-
-        activeRenderThread = Thread(renderLoop, "Swing-ActiveRender")
-        activeRenderThread!!.isDaemon = true
-        activeRenderThread!!.start()
-
         renderLoop.waitForStartup()
     }
 }
