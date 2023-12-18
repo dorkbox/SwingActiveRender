@@ -13,7 +13,7 @@ Maven Info
     <dependency>
       <groupId>com.dorkbox</groupId>
       <artifactId>SwingActiveRender</artifactId>
-      <version>1.4</version>
+      <version>1.5</version>
     </dependency>
 </dependencies>
 ```
@@ -23,7 +23,7 @@ Gradle Info
 ```
 dependencies {
     ...
-    implementation("com.dorkbox:SwingActiveRender:1.4")
+    implementation("com.dorkbox:SwingActiveRender:1.5")
 }
 ```
 

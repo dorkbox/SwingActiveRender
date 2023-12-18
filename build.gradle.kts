@@ -35,7 +35,7 @@ object Extras {
     // set for the project
     const val description = "Active Renderer for Swing"
     const val group = "com.dorkbox"
-    const val version = "1.4"
+    const val version = "1.5"
 
     // set as project.ext
     const val name = "SwingActiveRender"
